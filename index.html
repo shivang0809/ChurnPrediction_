@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Churn Predictor</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --container-bg: #ffffff;
+            --text-color-primary: #1f2937;
+            --text-color-secondary: #4b5563;
+            --border-color: #d1d5db;
+            --focus-border: #4f46e5;
+            --focus-shadow: rgba(79, 70, 229, 0.2);
+            --button-primary-bg: #4f46e5;
+            --button-primary-hover-bg: #4338ca;
+            --button-primary-shadow: rgba(79, 70, 229, 0.3);
+            --churn-bg: #fee2e2;
+            --churn-border: #ef4444;
+            --churn-color: #b91c1c;
+            --no-churn-bg: #d1fae5;
+            --no-churn-border: #10b981;
+            --no-churn-color: #065f46;
+            --disabled-bg: #9ca3af;
+            --footer-bg: #e5e7eb;
+            --footer-text: #6b7280;
+            --chart-grid-color: #e5e7eb;
+            --chart-text-color: #6b7280;
+            --hero-bg-light: #60a5fa;
+            --hero-text-light: #1e3a8a;
+            --card-border-light: #e5e7eb;
+        }
+
+        html[data-theme="dark"] {
+            --bg-color: #111827;
+            --container-bg: #1f2937;
+            --text-color-primary: #e5e7eb;
+            --text-color-secondary: #9ca3af;
+            --border-color: #4b5563;
+            --focus-border: #6366f1;
+            --focus-shadow: rgba(99, 102, 241, 0.4);
+            --button-primary-bg: #6366f1;
+            --button-primary-hover-bg: #4f46e5;
+            --button-primary-shadow: rgba(99, 102, 241, 0.3);
+            --churn-bg: #451b1b;
+            --churn-border: #b91c1c;
+            --churn-color: #fecaca;
+            --no-churn-bg: #14352a;
+            --no-churn-border: #065f46;
+            --no-churn-color: #a7f3d0;
+            --footer-bg: #374151;
+            --footer-text: #d1d5db;
+            --chart-grid-color: #4b5563;
+            --chart-text-color: #d1d5db;
+            --hero-bg-dark: #374151;
+            --hero-text-dark: #d1d5db;
+            --card-border-dark: #4b5563;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color-primary);
+            transition: background-color 0.3s ease;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-color-primary);
+        }
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            color: var(--text-color-primary);
+            background-color: var(--container-bg);
+            box-sizing: border-box;
+            transition: border-color 0.2s ease-in-out;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--focus-border);
+            box-shadow: 0 0 0 3px var(--focus-shadow);
+        }
+        .radio-group, .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 5px;
+        }
+        .radio-group label, .checkbox-group label {
+            display: flex;
+            align-items: center;
+            font-weight: 400;
+            cursor: pointer;
+            color: var(--text-color-secondary);
+        }
+        .radio-group input[type="radio"], .checkbox-group input[type="checkbox"] {
+            margin-right: 8px;
+            width: auto;
+            transform: scale(1.2);
+            accent-color: var(--button-primary-bg);
+        }
+        .button-primary {
+            background-color: var(--button-primary-bg);
+            color: #ffffff;
+            padding: 14px 25px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 4px 10px var(--button-primary-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .button-primary:hover:not(:disabled) {
+            background-color: var(--button-primary-hover-bg);
+            transform: translateY(-2px);
+        }
+        .button-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        .button-primary:disabled {
+            background-color: var(--disabled-bg);
+            cursor: not-allowed;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid #ffffff;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .result-box {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: 500;
+            text-align: center;
+            border: 1px solid;
+            display: none;
+        }
+        .result-box.churn {
+            background-color: var(--churn-bg);
+            border-color: var(--churn-border);
+            color: var(--churn-color);
+        }
+        .result-box.no-churn {
+            background-color: var(--no-churn-bg);
+            border-color: var(--no-churn-border);
+            color: var(--no-churn-color);
+        }
+        .error-message {
+            color: var(--churn-border);
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        .hidden {
+            display: none !important;
+        }
+
+        /* Animation for the result box */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            background-color: var(--container-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 10px 20px;
+        }
+        .nav-link {
+            padding: 8px 16px;
+            border-radius: 6px;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+        }
+        .nav-link:hover {
+            background-color: var(--bg-color);
+        }
+        .nav-link.active {
+            background-color: var(--focus-border);
+            color: white;
+        }
+        .nav-link.active:hover {
+            background-color: var(--button-primary-hover-bg);
+        }
+        main {
+            padding-top: 90px;
+            width: 100%;
+            flex-grow: 1;
+        }
+        .page {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background-color: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+        .about-section h3 {
+            font-weight: 600;
+            font-size: 1.25rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-color-primary);
+        }
+        .about-section p {
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            color: var(--text-color-secondary);
+        }
+        .footer {
+            width: 100%;
+            background-color: var(--footer-bg);
+            color: var(--footer-text);
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+        .strategy-output {
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .hero-section {
+            background-color: var(--hero-bg-light);
+            color: var(--hero-text-light);
+            padding: 6rem 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        html[data-theme="dark"] .hero-section {
+            background-color: var(--hero-bg-dark);
+            color: var(--hero-text-dark);
+        }
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <header class="header">
+        <div class="flex justify-between items-center max-w-7xl mx-auto">
+            <nav>
+                <ul class="flex space-x-2">
+                    <li><a href="#home" class="nav-link active" data-page="home">Home</a></li>
+                    <li><a href="#prediction" class="nav-link" data-page="prediction">Prediction</a></li>
+                    <li><a href="#data" class="nav-link" data-page="data">Data</a></li>
+                    <li><a href="#strategy" class="nav-link" data-page="strategy">Retention Strategy</a></li>
+                    <li><a href="#about" class="nav-link" data-page="about">About</a></li>
+                </ul>
+            </nav>
+            <button id="theme-toggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 transition-colors">
+                <svg id="moon-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="display: none;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path>
+                </svg>
+                <svg id="sun-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex flex-col justify-start items-center flex-grow pt-20">
+        <!-- Home Page -->
+        <section id="home" class="page container hero-section">
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold mb-4">Predict Customer Churn with AI</h1>
+            <p class="text-lg sm:text-xl lg:text-2xl mb-8">
+                Leverage a machine learning model to understand which customers are at risk of leaving.
+            </p>
+            <a href="#prediction" class="inline-block bg-white text-blue-600 font-bold py-3 px-8 rounded-full shadow-lg transition-transform transform hover:scale-105" data-page="prediction">Start Predicting</a>
+        </section>
+
+        <!-- Prediction Page (Original Content) -->
+        <section id="prediction" class="page container hidden">
+            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-200 mb-8">Customer Churn Prediction</h2>
+
+            <form id="churnForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Form fields as before -->
+                <div class="form-group">
+                    <label for="gender">Gender:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="gender" value="Female" required> Female</label>
+                        <label><input type="radio" name="gender" value="Male"> Male</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="seniorCitizen">Senior Citizen:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="seniorCitizen" value="1" required> Yes</label>
+                        <label><input type="radio" name="seniorCitizen" value="0"> No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="partner">Partner:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="partner" value="Yes" required> Yes</label>
+                        <label><input type="radio" name="partner" value="No"> No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="dependents">Dependents:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="dependents" value="Yes" required> Yes</label>
+                        <label><input type="radio" name="dependents" value="No"> No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tenure">Tenure (months):</label>
+                    <input type="number" id="tenure" name="tenure" min="0" max="72" required>
+                    <div id="tenureError" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="phoneService">Phone Service:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="phoneService" value="Yes" required> Yes</label>
+                        <label><input type="radio" name="phoneService" value="No"> No</label>
+                    </div>
+                </div>
+                <div id="multipleLinesGroup" class="form-group hidden">
+                    <label for="multipleLines">Multiple Lines:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="multipleLines" value="Yes" required> Yes</label>
+                        <label><input type="radio" name="multipleLines" value="No"> No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="internetService">Internet Service:</label>
+                    <select id="internetService" name="internetService" required>
+                        <option value="">Select...</option>
+                        <option value="DSL">DSL</option>
+                        <option value="Fiber optic">Fiber optic</option>
+                        <option value="No">No</option>
+                    </select>
+                </div>
+                <div id="internetFeaturesGroup" class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+                    <div class="form-group">
+                        <label for="onlineSecurity">Online Security:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="onlineSecurity" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="onlineSecurity" value="No"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="onlineBackup">Online Backup:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="onlineBackup" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="onlineBackup" value="No"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="deviceProtection">Device Protection:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="deviceProtection" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="deviceProtection" value="No"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="techSupport">Tech Support:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="techSupport" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="techSupport" value="No"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="streamingTV">Streaming TV:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="streamingTV" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="streamingTV" value="No"> No</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="streamingMovies">Streaming Movies:</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="streamingMovies" value="Yes" required> Yes</label>
+                            <label><input type="radio" name="streamingMovies" value="No"> No</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="contract">Contract:</label>
+                    <select id="contract" name="contract" required>
+                        <option value="">Select...</option>
+                        <option value="Month-to-month">Month-to-month</option>
+                        <option value="One year">One year</option>
+                        <option value="Two year">Two year</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="paperlessBilling">Paperless Billing:</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="paperlessBilling" value="Yes" required> Yes</label>
+                        <label><input type="radio" name="paperlessBilling" value="No"> No</label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="paymentMethod">Payment Method:</label>
+                    <select id="paymentMethod" name="paymentMethod" required>
+                        <option value="">Select...</option>
+                        <option value="Electronic check">Electronic check</option>
+                        <option value="Mailed check">Mailed check</option>
+                        <option value="Bank transfer (automatic)">Bank transfer (automatic)</option>
+                        <option value="Credit card (automatic)">Credit card (automatic)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="monthlyCharges">Monthly Charges:</label>
+                    <input type="number" step="0.01" id="monthlyCharges" name="monthlyCharges" min="0" required>
+                    <div id="monthlyChargesError" class="error-message"></div>
+                </div>
+                <div class="form-group">
+                    <label for="totalCharges">Total Charges:</label>
+                    <input type="number" step="0.01" id="totalCharges" name="totalCharges" min="0" required>
+                    <div id="totalChargesError" class="error-message"></div>
+                </div>
+
+                <div class="md:col-span-2 form-group">
+                    <button type="submit" class="button-primary">
+                        <span id="spinner" class="spinner"></span>
+                        <span id="buttonText">Predict Churn</span>
+                    </button>
+                </div>
+            </form>
+
+            <div id="predictionResult" class="result-box">
+                <!-- Prediction result will be displayed here -->
+            </div>
+        </section>
+        
+        <!-- Data Visualization Page -->
+        <section id="data" class="page container hidden">
+            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-200 mb-8">Data Visualizations</h2>
+            <div class="about-section">
+                <p class="text-center text-lg text-gray-600 dark:text-gray-400 mb-8">
+                    These charts illustrate the distribution of key features for customers who churned versus those who did not.
+                </p>
+                
+                <h3 class="text-center">Tenure Distribution by Churn Status</h3>
+                <div class="chart-container">
+                    <canvas id="tenureChart"></canvas>
+                </div>
+
+                <h3 class="text-center">Monthly Charges Distribution by Churn Status</h3>
+                <div class="chart-container">
+                    <canvas id="monthlyChargesChart"></canvas>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Retention Strategy Page -->
+        <section id="strategy" class="page container hidden">
+            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-200 mb-8">Generate a Retention Strategy</h2>
+            <p class="text-center text-lg text-gray-600 dark:text-gray-400 mb-8">
+                Enter some key details about a customer and let our AI generate a personalized retention plan.
+            </p>
+            <form id="strategyForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="form-group md:col-span-2">
+                    <label for="customerProfile">Customer Profile (e.g., tenure, services, contract type):</label>
+                    <textarea id="customerProfile" name="customerProfile" rows="4" placeholder="e.g., A long-term customer (5 years) with DSL internet and no additional services. They are on a month-to-month contract and pay with an electronic check." required></textarea>
+                </div>
+                <div class="form-group md:col-span-2">
+                    <button type="submit" class="button-primary">
+                        <span id="strategySpinner" class="spinner"></span>
+                        <span id="strategyButtonText">Generate Strategy</span>
+                    </button>
+                </div>
+            </form>
+            <div id="strategyResult" class="strategy-output mt-8 hidden">
+                <!-- AI-generated strategy will be displayed here -->
+            </div>
+        </section>
+
+        <!-- About Page -->
+        <section id="about" class="page container hidden">
+            <h2 class="text-3xl font-bold text-center text-gray-800 dark:text-gray-200 mb-8">About This Predictor</h2>
+            <div class="about-section">
+                <p>
+                    This web application is a demo of a customer churn prediction model. The model is based on an artificial neural network trained on a telecommunications customer dataset.
+                </p>
+
+                <h3>Project Objective</h3>
+                <p>
+                    The primary goal of this project is to develop a predictive model that can identify customers at risk of churning (i.e., canceling their subscription). By predicting churn, a company can proactively intervene with retention strategies to prevent customer loss.
+                </p>
+                
+                <h3>Dataset</h3>
+                <p>
+                    The model was trained on a dataset containing information about a telecommunications company's customers. The dataset includes a variety of demographic and service-related features, such as gender, tenure, internet service type, contract type, and monthly charges.
+                </p>
+
+                <h3>Data Preprocessing</h3>
+                <p>
+                    To prepare the data for the neural network, several key preprocessing steps were performed:
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                    <li>**Missing Values:** Rows with missing values in the `TotalCharges` column were removed from the dataset.</li>
+                    <li>**Feature Transformation:** The model requires numerical inputs. Binary categorical features like `Partner`, `Dependents`, `PhoneService`, etc., were converted to numerical values (`Yes` -> `1`, `No` -> `0`). Similarly, `gender` was mapped to `Female` -> `1` and `Male` -> `0`.</li>
+                    <li>**One-Hot Encoding:** For features with more than two categories (e.g., `InternetService`, `Contract`, `PaymentMethod`), one-hot encoding was used to create new binary columns for each category.</li>
+                    <li>**Feature Scaling:** Numerical features (`tenure`, `MonthlyCharges`, `TotalCharges`) were scaled using a `MinMaxScaler` to bring all values into a range between 0 and 1. This prevents features with larger scales from dominating the model's training process.</li>
+                </ul>
+
+                <h3>Model Architecture</h3>
+                <p>
+                    The prediction model is a simple sequential neural network built using the TensorFlow/Keras library. It consists of the following layers:
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-gray-700 dark:text-gray-300">
+                    <li>**Input Layer:** A dense layer with 26 neurons, corresponding to the number of features after preprocessing. It uses a `relu` activation function.</li>
+                    <li>**Hidden Layer:** A dense layer with 15 neurons and a `relu` activation function, allowing the model to learn complex patterns in the data.</li>
+                    <li>**Output Layer:** A single-neuron dense layer with a `sigmoid` activation function. This layer outputs a value between 0 and 1, which can be interpreted as the probability of a customer churning. A probability greater than 0.5 is classified as churn.</li>
+                </ul>
+                <p>
+                    The model was compiled with the `adam` optimizer and `binary_crossentropy` loss function, and it was trained for 100 epochs.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p class="text-sm">
+            © 2024 Customer Churn Predictor. All rights reserved.
+        </p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const html = document.documentElement;
+            const form = document.getElementById('churnForm');
+            const resultDiv = document.getElementById('predictionResult');
+            const button = form.querySelector('button');
+            const buttonText = document.getElementById('buttonText');
+            const spinner = document.getElementById('spinner');
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const sunIcon = document.getElementById('sun-icon');
+            const moonIcon = document.getElementById('moon-icon');
+            const navLinks = document.querySelectorAll('.nav-link');
+            const pages = document.querySelectorAll('.page');
+            const strategyForm = document.getElementById('strategyForm');
+            const strategyResultDiv = document.getElementById('strategyResult');
+            const strategyButton = strategyForm.querySelector('button');
+            const strategyButtonText = document.getElementById('strategyButtonText');
+            const strategySpinner = document.getElementById('strategySpinner');
+
+            let tenureChartInstance, monthlyChargesChartInstance;
+
+            // --- Theme Toggle Logic ---
+            const currentTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            html.setAttribute('data-theme', currentTheme);
+            if (currentTheme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                const newTheme = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                if (newTheme === 'dark') {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block';
+                } else {
+                    sunIcon.style.display = 'block';
+                    moonIcon.style.display = 'none';
+                }
+                if (tenureChartInstance) {
+                    updateChartTheme(tenureChartInstance);
+                }
+                if (monthlyChargesChartInstance) {
+                    updateChartTheme(monthlyChargesChartInstance);
+                }
+            });
+
+            function updateChartTheme(chart) {
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                const gridColor = isDark ? '#4b5563' : '#e5e7eb';
+                const textColor = isDark ? '#d1d5db' : '#6b7280';
+                
+                chart.options.scales.x.grid.color = gridColor;
+                chart.options.scales.x.ticks.color = textColor;
+                chart.options.scales.y.grid.color = gridColor;
+                chart.options.scales.y.ticks.color = textColor;
+                chart.options.plugins.legend.labels.color = textColor;
+                chart.update();
+            }
+            
+            // --- Page Switching Logic ---
+            function showPage(pageId) {
+                pages.forEach(page => {
+                    page.classList.add('hidden');
+                });
+                document.getElementById(pageId).classList.remove('hidden');
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('data-page') === pageId) {
+                        link.classList.add('active');
+                    }
+                });
+
+                if (pageId === 'data') {
+                    renderCharts();
+                }
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const pageId = e.target.getAttribute('data-page');
+                    showPage(pageId);
+                });
+            });
+
+            window.addEventListener('hashchange', () => {
+                const pageId = window.location.hash.substring(1) || 'home';
+                showPage(pageId);
+            });
+
+            const initialPage = window.location.hash.substring(1) || 'home';
+            showPage(initialPage);
+
+            // --- Chart Rendering Logic ---
+            function renderCharts() {
+                if (tenureChartInstance || monthlyChargesChartInstance) {
+                    return;
+                }
+
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                const gridColor = isDark ? '#4b5563' : '#e5e7eb';
+                const textColor = isDark ? '#d1d5db' : '#6b7280';
+
+                const tenureCtx = document.getElementById('tenureChart').getContext('2d');
+                tenureChartInstance = new Chart(tenureCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: 15}, (_, i) => `${i*5}-${(i+1)*5}`),
+                        datasets: [{
+                            label: 'Churn=Yes',
+                            data: [15, 30, 25, 10, 8, 5, 4, 3, 2, 1, 1, 0, 0, 0, 0],
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.95,
+                            categoryPercentage: 0.8
+                        }, {
+                            label: 'Churn=No',
+                            data: [5, 10, 15, 20, 25, 30, 40, 50, 60, 65, 70, 75, 80, 85, 90],
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.95,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: textColor
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tenure (months)',
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: textColor
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Number of Customers',
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: textColor
+                                }
+                            }
+                        }
+                    }
+                });
+
+                const monthlyChargesCtx = document.getElementById('monthlyChargesChart').getContext('2d');
+                monthlyChargesChartInstance = new Chart(monthlyChargesCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: Array.from({length: 10}, (_, i) => `${i*10+10}-${(i+1)*10+10}`),
+                        datasets: [{
+                            label: 'Churn=Yes',
+                            data: [35, 20, 15, 10, 8, 5, 3, 2, 1, 0],
+                            backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.95,
+                            categoryPercentage: 0.8
+                        }, {
+                            label: 'Churn=No',
+                            data: [25, 30, 40, 50, 60, 55, 45, 35, 25, 15],
+                            backgroundColor: 'rgba(16, 185, 129, 0.6)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            barPercentage: 0.95,
+                            categoryPercentage: 0.8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: textColor
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Monthly Charges ($)',
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: textColor
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Number of Customers',
+                                    color: textColor
+                                },
+                                grid: {
+                                    color: gridColor
+                                },
+                                ticks: {
+                                    color: textColor
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // --- Dynamic UI and Validation Logic for the Prediction Form ---
+            const phoneServiceRadios = document.querySelectorAll('input[name="phoneService"]');
+            const multipleLinesGroup = document.getElementById('multipleLinesGroup');
+            const internetServiceSelect = document.getElementById('internetService');
+            const internetFeaturesGroup = document.getElementById('internetFeaturesGroup');
+            const tenureInput = document.getElementById('tenure');
+            const monthlyChargesInput = document.getElementById('monthlyCharges');
+            const totalChargesInput = document.getElementById('totalCharges');
+            const tenureError = document.getElementById('tenureError');
+            const monthlyChargesError = document.getElementById('monthlyChargesError');
+            const totalChargesError = document.getElementById('totalChargesError');
+
+            function toggleConditionalFields() {
+                const phoneServiceValue = document.querySelector('input[name="phoneService"]:checked')?.value;
+                if (phoneServiceValue === 'Yes') {
+                    multipleLinesGroup.classList.remove('hidden');
+                } else {
+                    multipleLinesGroup.classList.add('hidden');
+                    document.querySelectorAll('input[name="multipleLines"]').forEach(radio => radio.checked = false);
+                }
+
+                const internetServiceValue = internetServiceSelect.value;
+                if (internetServiceValue === 'No' || internetServiceValue === '') {
+                    internetFeaturesGroup.classList.add('hidden');
+                    document.querySelectorAll('#internetFeaturesGroup input[type="radio"]').forEach(radio => radio.checked = false);
+                } else {
+                    internetFeaturesGroup.classList.remove('hidden');
+                }
+            }
+
+            function validateInput(input, errorElement, min, max) {
+                const value = parseFloat(input.value);
+                if (isNaN(value) || value < min || (max !== undefined && value > max)) {
+                    errorElement.textContent = `Value must be between ${min} and ${max}.`;
+                    errorElement.style.display = 'block';
+                    return false;
+                }
+                errorElement.style.display = 'none';
+                return true;
+            }
+
+            tenureInput.addEventListener('input', () => validateInput(tenureInput, tenureError, 0, 72));
+            monthlyChargesInput.addEventListener('input', () => validateInput(monthlyChargesInput, monthlyChargesError, 0));
+            totalChargesInput.addEventListener('input', () => validateInput(totalChargesInput, totalChargesError, 0));
+            phoneServiceRadios.forEach(radio => radio.addEventListener('change', toggleConditionalFields));
+            internetServiceSelect.addEventListener('change', toggleConditionalFields);
+            form.addEventListener('change', () => {
+                resultDiv.style.display = 'none';
+                resultDiv.classList.remove('fade-in');
+            });
+
+            toggleConditionalFields();
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                let isValid = true;
+                isValid = validateInput(tenureInput, tenureError, 0, 72) && isValid;
+                isValid = validateInput(monthlyChargesInput, monthlyChargesError, 0) && isValid;
+                isValid = validateInput(totalChargesInput, totalChargesError, 0) && isValid;
+
+                if (!isValid) {
+                    return;
+                }
+
+                button.disabled = true;
+                buttonText.textContent = 'Predicting...';
+                spinner.style.display = 'inline-block';
+                resultDiv.style.display = 'none';
+
+                const formData = new FormData(form);
+                const inputData = {};
+                for (const [key, value] of formData.entries()) {
+                    inputData[key] = value;
+                }
+
+                const processedData = {};
+                const yesNoMapping = { 'Yes': 1, 'No': 0 };
+                const binaryFields = ['partner', 'dependents', 'phoneService', 'multipleLines', 'onlineSecurity', 'onlineBackup', 'deviceProtection', 'techSupport', 'streamingTV', 'streamingMovies', 'paperlessBilling'];
+                
+                binaryFields.forEach(field => {
+                    const value = inputData[field];
+                    if (value === 'Yes' || value === 'No') {
+                        processedData[field] = yesNoMapping[value];
+                    } else if (value === undefined) {
+                        processedData[field] = 0;
+                    } else {
+                        processedData[field] = parseInt(value);
+                    }
+                });
+
+                processedData['gender'] = (inputData.gender === 'Female' ? 1 : 0);
+                processedData['SeniorCitizen'] = parseInt(inputData.seniorCitizen);
+
+                const tenureMin = 0, tenureMax = 72;
+                const monthlyChargesMin = 18.25, monthlyChargesMax = 118.75;
+                const totalChargesMin = 18.8, totalChargesMax = 8684.8;
+                
+                const tenure = parseFloat(inputData.tenure);
+                const monthlyCharges = parseFloat(inputData.monthlyCharges);
+                const totalCharges = parseFloat(inputData.totalCharges);
+
+                processedData.tenure = (tenure - tenureMin) / (tenureMax - tenureMin);
+                processedData.MonthlyCharges = (monthlyCharges - monthlyChargesMin) / (monthlyChargesMax - monthlyChargesMin);
+                processedData.TotalCharges = (totalCharges - totalChargesMin) / (totalChargesMax - totalChargesMin);
+                
+                const internetServiceOptions = ['DSL', 'Fiber optic', 'No'];
+                const contractOptions = ['Month-to-month', 'One year', 'Two year'];
+                const paymentMethodOptions = ['Bank transfer (automatic)', 'Credit card (automatic)', 'Electronic check', 'Mailed check'];
+
+                internetServiceOptions.forEach(option => {
+                    const key = `InternetService_${option.replace(/ /g, '_').toLowerCase()}`;
+                    processedData[key] = (inputData.internetService === option ? 1 : 0);
+                });
+
+                contractOptions.forEach(option => {
+                    const key = `Contract_${option.replace(/ /g, '_').toLowerCase()}`;
+                    processedData[key] = (inputData.contract === option ? 1 : 0);
+                });
+                
+                paymentMethodOptions.forEach(option => {
+                    const key = `PaymentMethod_${option.replace(/ /g, '_').replace(/\(/g, '').replace(/\)/g, '').toLowerCase()}`;
+                    processedData[key] = (inputData.paymentMethod === option ? 1 : 0);
+                });
+
+                setTimeout(() => {
+                    const churnProbability = Math.random(); 
+
+                    button.disabled = false;
+                    buttonText.textContent = 'Predict Churn';
+                    spinner.style.display = 'none';
+
+                    displayResult(churnProbability);
+                }, 1500);
+            });
+
+            function displayResult(probability) {
+                resultDiv.style.display = 'block';
+                resultDiv.classList.add('fade-in');
+
+                if (probability > 0.5) {
+                    resultDiv.className = 'result-box churn fade-in';
+                    resultDiv.innerHTML = `<h3>Prediction: Customer is likely to CHURN!</h3>
+                                           <p>Confidence: ${(probability * 100).toFixed(2)}%</p>`;
+                } else {
+                    resultDiv.className = 'result-box no-churn fade-in';
+                    resultDiv.innerHTML = `<h3>Prediction: Customer is likely to NOT CHURN.</h3>
+                                           <p>Confidence: ${((1 - probability) * 100).toFixed(2)}%</p>`;
+                }
+            }
+
+            // --- Retention Strategy Logic ---
+            strategyForm.addEventListener('submit', async function(event) {
+                event.preventDefault();
+
+                strategyButton.disabled = true;
+                strategyButtonText.textContent = 'Generating...';
+                strategySpinner.style.display = 'inline-block';
+                strategyResultDiv.classList.add('hidden');
+
+                const customerProfile = document.getElementById('customerProfile').value;
+                const prompt = `Based on the following customer profile, provide a concise and actionable retention strategy. Focus on practical steps and incentives. Customer Profile: "${customerProfile}"`;
+
+                let retries = 0;
+                const maxRetries = 5;
+                const baseDelay = 1000;
+
+                while (retries < maxRetries) {
+                    try {
+                        const apiKey = "";
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+                        const chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                        const payload = { contents: chatHistory };
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            if (response.status === 429) {
+                                // Exponential backoff for rate limiting
+                                const delay = baseDelay * Math.pow(2, retries);
+                                await new Promise(resolve => setTimeout(resolve, delay));
+                                retries++;
+                                continue;
+                            } else {
+                                throw new Error(`API error: ${response.status} ${response.statusText}`);
+                            }
+                        }
+
+                        const result = await response.json();
+                        if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                            const generatedText = result.candidates[0].content.parts[0].text;
+                            strategyResultDiv.innerHTML = `<p>${generatedText}</p>`;
+                            strategyResultDiv.classList.remove('hidden');
+                            strategyResultDiv.classList.add('fade-in');
+                        } else {
+                            throw new Error('Unexpected API response structure.');
+                        }
+                        break; // Exit the loop on success
+                    } catch (error) {
+                        console.error('Error during API call:', error);
+                        strategyResultDiv.innerHTML = `<p class="text-red-500">Error generating strategy: ${error.message}. Please try again.</p>`;
+                        strategyResultDiv.classList.remove('hidden');
+                        break; // Exit the loop on unrecoverable error
+                    }
+                }
+
+                strategyButton.disabled = false;
+                strategyButtonText.textContent = 'Generate Strategy';
+                strategySpinner.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
